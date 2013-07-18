@@ -1,41 +1,39 @@
 package org.coder.from.casterly.rock.mtrain.listener;
 
-import org.coder.from.casterly.rock.mtrain.event.core.Event;
-import org.coder.from.casterly.rock.mtrain.event.core.EventType;
 import org.slf4j.*;
 
-import java.util.*;
+import org.coder.from.casterly.rock.mtrain.core.MTrain;
+import org.coder.from.casterly.rock.mtrain.event.core.*;
+
+import static org.coder.from.casterly.rock.mtrain.event.core.EventType.*;
 
 
+public final class MultipleEventListener extends AbstractEventListener{
 
-public final class MultipleEventListener implements EventListener{
-
-	private final EnumSet<EventType> supportedTypes;
-	
 	private final static String NAME	= MultipleEventListener.class.getSimpleName();
 	private final static Logger LOGGER 	= LoggerFactory.getLogger( NAME );
 	
 	
 	public MultipleEventListener( EventType ... types ){
-		this.supportedTypes	= EnumSet.copyOf( Arrays.asList(types) );
+		super( NAME, CALCULATE, SUBSCRIBE );
 	}
 	
 	
 	@Override
-	public String getName(){
-		return NAME;
-	}
-
-
-	@Override
-	public Set<EventType> getSupportedSet(){
-	    return supportedTypes;
+	public void init(){
+		MTrain.register( this );
 	}
 	
 	
 	@Override
 	public void update( Event event ){
-		LOGGER.info("Event arrived: {} ", event );
+		LOGGER.info("Received {} event >> {} ", event.getType(), event );
+	}
+	
+	
+	@Override
+	public void stop(){
+		MTrain.deregister( this );
 	}
 
 	

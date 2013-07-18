@@ -9,10 +9,6 @@ public final class StringEvent implements Event{
 	private final EventType type;
 	private final String payload;
 	
-	public StringEvent( EventType type ){
-		this( type, "" );
-	}	
-	
 	public StringEvent( EventType type, String payload ){
 		this.type		= type;
 		this.payload 	= payload;

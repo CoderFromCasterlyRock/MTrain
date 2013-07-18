@@ -6,6 +6,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import org.coder.from.casterly.rock.mtrain.event.core.Event;
+import org.coder.from.casterly.rock.mtrain.event.core.EventType;
 import org.coder.from.casterly.rock.mtrain.listener.AdminListener;
 import org.coder.from.casterly.rock.mtrain.listener.EventListener;
 
@@ -68,12 +69,10 @@ public final class MTrain{
 	
 	
 	public final static void registerAll( EventListener ... listeners ){
-		
 		for( EventListener listener : listeners ){
 			ELIST.add( listener );
-			LOGGER.info("Registered event listener [{}] for events [{}].", listener.getName(), listener.getSupportedSet() );	
+			LOGGER.info("Registered [{}] for event/s [{}].", listener.getName(), listener.getSupportedEventSet() );	
 		}
-		
     }
 	
     	
@@ -85,11 +84,14 @@ public final class MTrain{
 	public final boolean postSync( Event event ){
 		
 		checkSetup();
+		
+		int dispatchedCount = 0;
 		messageCounter.incrementAndGet();
 	    
-	    int dispatchedCount = 0;
+	    EventType type	= event.getType();
+	    
 	    for( EventListener listener : ELIST ){
-	    	if( listener.getSupportedSet().contains( event.getType() )){
+	    	if( listener.isSupported( type ) ){
 	    		 listener.update( event );
 	    		 ++dispatchedCount;
 	    	}
@@ -148,7 +150,8 @@ public final class MTrain{
 			executorService.awaitTermination( 2, TimeUnit.SECONDS );
 			executorService.shutdownNow();
 	
-			LOGGER.info("Successfully stopped MTrain.\n" );
+			LOGGER.info("=========================================" );
+			LOGGER.info("Successfully stopped MTrain." );
 			LOGGER.info("{} ", getStatistics() );
 		
 		}catch( InterruptedException e ){
@@ -169,12 +172,13 @@ public final class MTrain{
 				try{
 					
 					Event event 	= EVENT_QUEUE.take();
+					EventType type	= event.getType();
 					
+					int dispatchedCount = 0;
 				    messageCounter.incrementAndGet();
 				    
-				    int dispatchedCount = 0;
 				    for( EventListener listener : ELIST ){
-				    	if( listener.getSupportedSet().contains( event.getType() )){
+				    	if( listener.isSupported( type ) ){
 				    		 listener.update( event );
 				    		 ++dispatchedCount;
 				    	}
