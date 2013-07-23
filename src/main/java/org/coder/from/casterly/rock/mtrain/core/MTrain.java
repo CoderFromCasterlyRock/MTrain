@@ -5,10 +5,10 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import org.coder.from.casterly.rock.mtrain.event.core.Event;
-import org.coder.from.casterly.rock.mtrain.event.core.EventType;
-import org.coder.from.casterly.rock.mtrain.listener.AdminListener;
-import org.coder.from.casterly.rock.mtrain.listener.EventListener;
+import org.coder.from.casterly.rock.mtrain.listener.core.*;
+import org.coder.from.casterly.rock.mtrain.listener.impl.*;
+import org.coder.from.casterly.rock.mtrain.messages.core.*;
+import org.coder.from.casterly.rock.mtrain.messages.core.Message.*;
 
 import static java.util.concurrent.TimeUnit.*;
 
@@ -22,13 +22,12 @@ public final class MTrain{
 	private final AdminListener adminListener;
 	private final AtomicInteger messageCounter;
 	
-	private final BlockingQueue<Event> EVENT_QUEUE;
 	private final ExecutorService executorService;
-	
-	
+	private final BlockingQueue<Message> MESSAGE_QUEUE;
+			
 	private final static String NAME 						     	= MTrain.class.getSimpleName();
 	private final static Logger LOGGER 						     	= LoggerFactory.getLogger( NAME );
-	private final static CopyOnWriteArrayList<EventListener> ELIST 	= new CopyOnWriteArrayList<EventListener>( );
+	private final static CopyOnWriteArrayList<MListener> ELIST= new CopyOnWriteArrayList<MListener>( );
 	
 	
 	public MTrain(  ){
@@ -43,7 +42,7 @@ public final class MTrain{
 		this.adminListener 		= new AdminListener();
 		
 		this.dispatcher			= new EventDispatcher();
-		this.EVENT_QUEUE 		= new LinkedBlockingQueue<Event>( capacity );
+		this.MESSAGE_QUEUE 		= new LinkedBlockingQueue<Message>( capacity );
 		this.executorService	= Executors.newSingleThreadExecutor( new MTrainThreadFactory("MTrainAsync") );
 
 	}
@@ -63,49 +62,44 @@ public final class MTrain{
 	}
 	
 	
-	public final static void register( EventListener listener ){
+	public final static void register( MListener listener ){
 		registerAll( listener );
     }
 	
 	
-	public final static void registerAll( EventListener ... listeners ){
-		for( EventListener listener : listeners ){
+	public final static void registerAll( MListener ... listeners ){
+		for( MListener listener : listeners ){
 			ELIST.add( listener );
-			LOGGER.info("Registered [{}] for event/s [{}].", listener.getName(), listener.getSupportedEventSet() );	
+			LOGGER.debug("Registered [{}] for message/s [{}].", listener.getName(), listener.getSupportedMessages() );	
 		}
     }
-	
-    	
-	private final void checkSetup(){
-		if ( !keepDispatching ) throw new IllegalStateException("init() must be called before posting events.");
-	}
-	
-	
-	public final boolean postSync( Event event ){
 		
-		checkSetup();
+	
+	public final boolean postSync( Message event ){
 		
 		int dispatchedCount = 0;
-		messageCounter.incrementAndGet();
+		MessageType type	= event.getType();
 	    
-	    EventType type	= event.getType();
-	    
-	    for( EventListener listener : ELIST ){
+	    for( MListener listener : ELIST ){
 	    	if( listener.isSupported( type ) ){
 	    		 listener.update( event );
 	    		 ++dispatchedCount;
 	    	}
 	    }
 		
-	    if( dispatchedCount == 0 ) adminListener.update( event );
+	    if( dispatchedCount == 0 ){
+	    	adminListener.update( event );
+	    	return false;
+	    }
 	    
-		return true;
+	    messageCounter.incrementAndGet();
+	    return true;
+	    
 	}
 	
 	
-	public final boolean postAsync( Event event ){
-		checkSetup();
-		return EVENT_QUEUE.offer( event );
+	public final boolean postAsync( Message event ){
+		return MESSAGE_QUEUE.offer( event );
 	}
 	
 		
@@ -120,23 +114,23 @@ public final class MTrain{
 	}
 	
 	
-	public final static void deregister( EventListener listener ){
+	public final static void deregister( MListener listener ){
 		deregisterAll( listener );
     }
 	
 	
-	public final static void deregisterAll( EventListener ... listeners ){
+	public final static void deregisterAll( MListener ... listeners ){
 		
 		try{
 	
-			for( EventListener listener : listeners ){
+			for( MListener listener : listeners ){
 				Thread.sleep( 10 );
 				ELIST.remove( listener );
-				LOGGER.info("Deregistered event listener [{}].", listener.getName() );
+				LOGGER.debug("Deregistered message listener [{}].", listener.getName() );
 			}
 			
 		}catch( Exception e){
-			LOGGER.warn("Exception while deregistering event listener [{}].", listeners );
+			LOGGER.warn("Exception while deregistering message listener [{}].", listeners );
 		}
 		
     }
@@ -171,20 +165,24 @@ public final class MTrain{
 				
 				try{
 					
-					Event event 	= EVENT_QUEUE.take();
-					EventType type	= event.getType();
+					Message event 		= MESSAGE_QUEUE.take();
+					MessageType type	= event.getType();
 					
 					int dispatchedCount = 0;
-				    messageCounter.incrementAndGet();
-				    
-				    for( EventListener listener : ELIST ){
+				   				    
+				    for( MListener listener : ELIST ){
 				    	if( listener.isSupported( type ) ){
 				    		 listener.update( event );
 				    		 ++dispatchedCount;
 				    	}
 				    }
 					
-				    if( dispatchedCount == 0 ) adminListener.update( event );
+				    if( dispatchedCount == 0 ){
+				    	adminListener.update( event );
+				    	continue;
+				    }
+				    
+				    messageCounter.incrementAndGet();
 				
 				}catch( InterruptedException ie ){
 					LOGGER.info("Successfully shut down EventDispatcher thread.");

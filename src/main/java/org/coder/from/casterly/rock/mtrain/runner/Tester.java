@@ -1,31 +1,31 @@
 package org.coder.from.casterly.rock.mtrain.runner;
 
 import org.coder.from.casterly.rock.mtrain.core.*;
-import org.coder.from.casterly.rock.mtrain.event.impl.*;
-import org.coder.from.casterly.rock.mtrain.listener.*;
+import org.coder.from.casterly.rock.mtrain.listener.core.*;
+import org.coder.from.casterly.rock.mtrain.listener.impl.*;
+import org.coder.from.casterly.rock.mtrain.messages.impl.*;
 
-import static org.coder.from.casterly.rock.mtrain.event.core.EventType.*;
 
-
-public class Tester {
+public class Tester{
 
 	
 	public static void main( String[] args ){
 		
-		MTrain train 			= new MTrain( );
+		MTrain train 				= new MTrain( );
 		train.init();
 		
-		EventListener listener1	= new LoginEventListener( );
-		listener1.init();
+		MListener listener1			= new LoginListener( );
+		MListener listener2			= new SubscribeListener( );
+		MListener listener3			= new UnsubscribeListener( );
+				
+		MTrain.registerAll( listener1, listener2, listener3 );
 		
-		EventListener listener2	= new MultipleEventListener( );
-		listener2.init();
+		train.postSync( new LoginMessage( "TestId123" ) );
+		train.postSync( new SubscribeMessage("IBM", "APPL", "C", "BAC", "JPM" ) );
+		train.postAsync( new UnsubscribeMessage("IBM", "APPL", "C", "BAC", "JPM" ) );
+		train.postAsync( new LogoutMessage("TestId123" ) );
 		
-		train.postSync( new LoginEvent( "TestId123" ) );
-		train.postSync( new StringEvent( CALCULATE, "Price to Yield for the 2 Year OTR Bond.") );
-		train.postSync( new StringEvent( SUBSCRIBE, "Subscribe for IBM market data." ) );
-		train.postAsync( new OrderEvent( WRITE_SYNCHRONOUSLY, 1, "IBM", 55d, 100, "Buy" ) );
-		
+		MTrain.deregisterAll( listener1, listener2, listener3 );
 		train.stop();
 		
 	}

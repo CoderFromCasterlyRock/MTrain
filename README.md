@@ -10,26 +10,29 @@ Quick Usage Guide
 -----------------
 Create and initialize MTrain.
 
-	MTrain train = new MTrain( );
-	train.init();
+		MTrain train = new MTrain( );
+		train.init();
 
-Create EventListeners and register them with MTrain.
+Create Message Listeners and register them with MTrain.
 
-	EventListener listener1	= new SingleEventListener( LOGIN );
-	EventListener listener2	= new MultipleEventListener( CALCULATE, SUBSCRIBE );
-	MTrain.registerAll( listener1, listener2 );
-	
+		MListener listener1			= new LoginListener( );
+		MListener listener2			= new SubscribeListener( );
+		MListener listener3			= new UnsubscribeListener( );
+		MTrain.registerAll( listener1, listener2, listener3 );
+		
 Dispatch events, **synchronously** or **asynchronously**, to the registered listener.
 	
-	train.postSync( new LongEvent( LOGIN, 1005) );
-	train.postSync( new StringEvent( CALCULATE, "Price to Yield for the 2 Year OTR Bond.") );
-	train.postSync( new StringEvent( SUBSCRIBE, "Subscribe for IBM market data." ) );
+		train.postSync( new LoginMessage( "TestId123" ) );
+		train.postAsync( new SubscribeMessage("IBM", "APPL", "C", "BAC", "JPM" ) );
+		train.postAsync( new UnsubscribeMessage("IBM", "APPL", "C", "BAC", "JPM" ) );
+		train.postSync( new LogoutMessage("TestId123" ) );
+	
+Note that the blocking or non-blocking nature of message dispatching is not bound at compile-time.
+Therefore, you can dispatch any message either synchronously or asynchronously.
 		
-	train.postAsync( new OrderEvent( WRITE_SYNCHRONOUSLY, 1, "IBM", 55d, 100, "Buy" ) );
-
-You will notice that we don't have any takers for **WRITE_SYNCHRONOUSLY** event.
-In the parlance of MTRAIN, such events are called **dead** events.  
-Dead events, by default, are logged as a warning by a special listener called the AdminListener.  
+Further, you will notice that LogoutMessage has no takers ( no registered listeners ).
+In the parlance of MTRAIN, such messages are considered **dead**.  
+Dead messages, by default, are logged as a warning by a special listener called the AdminListener.  
 
 Optionally, deregister the listener and stop the MTrain.
 

@@ -1,20 +1,20 @@
-package org.coder.from.casterly.rock.mtrain.event.impl;
+package org.coder.from.casterly.rock.mtrain.messages.impl;
 
-import org.coder.from.casterly.rock.mtrain.event.core.*;
+import org.coder.from.casterly.rock.mtrain.messages.core.*;
 
 
-public final class LoginEvent implements Event{
+public final class LoginMessage implements Message{
 
 	private final String userId;
 		
-	public LoginEvent( String userId ){
+	public LoginMessage( String userId ){
 		this.userId		= userId;
 	}
 	
 
 	@Override
-	public final EventType getType(){
-		return EventType.LOGIN;
+	public final MessageType getType(){
+		return MessageType.LOGIN;
 	}
 	
 	
@@ -26,7 +26,7 @@ public final class LoginEvent implements Event{
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder( 32 );
-		builder.append("Event [Type=").append( getType() );
+		builder.append("Message [Type=").append( getType() );
 		builder.append(", UserId=").append(userId);
 		builder.append("]");
 		
