@@ -13,7 +13,7 @@ Create and initialize MTrain.
 		MTrain train = new MTrain( );
 		train.init();
 
-Create Message Listeners and register them with MTrain.
+Create Message listeners and register them with MTrain.
 
 		MListener listener1			= new LoginListener( );
 		MListener listener2			= new SubscribeListener( );
@@ -27,14 +27,13 @@ Dispatch events, **synchronously** or **asynchronously**, to the registered list
 		train.postAsync( new UnsubscribeMessage("IBM", "APPL", "C", "BAC", "JPM" ) );
 		train.postSync( new LogoutMessage("TestId123" ) );
 	
-Note that the blocking or non-blocking nature of message dispatching is not bound at compile-time.
+Note that the nature of message dispatch is not bound at compile-time.
 Therefore, you can dispatch any message either synchronously or asynchronously.
 		
-Further, you will notice that LogoutMessage has no takers ( no registered listeners ).
-In the parlance of MTRAIN, such messages are considered **dead**.  
-Dead messages, by default, are logged as a warning by a special listener called the AdminListener.  
+Further, you will notice that LogoutMessage has no registered listeners.
+MTRAIN considers such messages as **dead** and by default, logs them via a special listener (AdminListener).  
 
-Optionally, deregister the listener and stop the MTrain.
+Optionally, deregister listeners and stop the MTrain.
 
 	MTrain.deregisterAll( listener1, listerner2 );
 	train.stop();
